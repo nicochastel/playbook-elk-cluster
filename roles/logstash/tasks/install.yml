@@ -1,0 +1,39 @@
+---
+########################################################
+# Set up Logstash
+########################################################
+
+- name: Install logstash
+  yum:
+    name: logstash-{{ elasticsearch_version }}
+    state: latest
+    update_cache: yes
+
+- name: Create logstash config
+  template:
+    src: logstash.j2
+    dest: /etc/logstash/logstash.yml
+
+- name: Create logstash pipeline for filebeat
+  template:
+    src: 01-filebeat-modules.j2
+    dest: /etc/logstash/conf.d/01-filebeat-modules.conf
+
+- name: Force systemd to reread configs
+  systemd: daemon_reload=yes
+
+- name: Enable logstash.service
+  systemd:
+    name: logstash.service
+    enabled: yes
+
+- name: permit port {{  logstash_filebeat_port }} for logstash 
+  firewalld:
+    port: "{{ logstash_filebeat_port }}/tcp"
+    state: enabled
+    permanent: yes
+
+- name: restart firewalld service
+  systemd:
+    name: firewalld
+    state: restarted

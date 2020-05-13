@@ -1,0 +1,49 @@
+[VBox_Guests]
+elkmaster1 on_hypervisor="192.168.81.1" guest_cpu="1" guest_ram="2048" guest_os_type="RedHat_64" guest_ip="10.0.2.201" guest_gw="10.0.2.1" guest_mask="255.255.255.0" guest_broad="10.0.2.255" guest_dns1="192.168.1.1" guest_domain="gop.link" guest_dns2="80.10.246.2"
+elkmaster2 on_hypervisor="192.168.81.1" guest_cpu="1" guest_ram="2048" guest_os_type="RedHat_64" guest_ip="10.0.2.202" guest_gw="10.0.2.1" guest_mask="255.255.255.0" guest_broad="10.0.2.255" guest_dns1="192.168.1.1" guest_domain="gop.link" guest_dns2="80.10.246.2"
+elkmaster3 on_hypervisor="192.168.81.1" guest_cpu="1" guest_ram="2048" guest_os_type="RedHat_64" guest_ip="10.0.2.206" guest_gw="10.0.2.1" guest_mask="255.255.255.0" guest_broad="10.0.2.255" guest_dns1="192.168.1.1" guest_domain="gop.link" guest_dns2="80.10.246.2"
+kibana1 on_hypervisor="192.168.81.1" guest_cpu="1" guest_ram="2048" guest_os_type="RedHat_64" guest_ip="10.0.2.203" guest_gw="10.0.2.1" guest_mask="255.255.255.0" guest_broad="10.0.2.255" guest_dns1="192.168.1.1" guest_domain="gop.link" guest_dns2="80.10.246.2"
+logstash1 on_hypervisor="192.168.81.1" guest_cpu="1" guest_ram="2048" guest_os_type="RedHat_64" guest_ip="10.0.2.204" guest_gw="10.0.2.1" guest_mask="255.255.255.0" guest_broad="10.0.2.255" guest_dns1="192.168.1.1" guest_domain="gop.link" guest_dns2="80.10.246.2"
+
+[centos]
+10.0.2.201
+10.0.2.202
+10.0.2.206
+10.0.2.203
+10.0.2.204
+
+[kibana]
+10.0.2.203
+
+[logstash]
+10.0.2.204
+
+[filebeat]
+10.0.2.201
+10.0.2.202
+10.0.2.206
+10.0.2.203
+10.0.2.204
+
+[metricbeat]
+10.0.2.201
+10.0.2.202
+10.0.2.206
+10.0.2.203
+10.0.2.204
+
+[Provider_VBox_Windows]
+192.168.81.1
+
+#group elasticsearch
+
+[elk_cluster:children]
+elk_master
+elk_nodes
+
+[elk_master]
+10.0.2.201
+10.0.2.202
+10.0.2.206
+
+[elk_nodes]

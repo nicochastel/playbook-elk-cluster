@@ -1,0 +1,17 @@
+---
+   - hosts: centos
+     vars:
+       timesync_timezone: 'Europe/Paris'
+       timesync_ntp_servers:
+         - hostname: 0.fr.pool.ntp.org
+           iburst: yes
+         - hostname: 1.fr.pool.ntp.org
+           iburst: yes
+         - hostname: 172.22.10.201
+           iburst: yes   
+     roles: 
+        - basics
+        - timesync
+        - updateetchosts
+
+

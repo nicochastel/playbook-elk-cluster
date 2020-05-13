@@ -1,0 +1,7 @@
+---
+- name: Start kibana.service
+  systemd: 
+    name: kibana.service
+    state: started
+
+

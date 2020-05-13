@@ -1,0 +1,127 @@
+# ======================== Elasticsearch Configuration =========================
+#
+# NOTE: Elasticsearch comes with reasonable defaults for most settings.
+#       Before you set out to tweak and tune the configuration, make sure you
+#       understand what are you trying to accomplish and the consequences.
+#
+# The primary way of configuring a node is via this file. This template lists
+# the most important settings you may want to configure for a production cluster.
+#
+# Please consult the documentation for further information on configuration options:
+# https://www.elastic.co/guide/en/elasticsearch/reference/index.html
+#
+# ---------------------------------- Cluster -----------------------------------
+#
+# Use a descriptive name for your cluster:
+#
+cluster.name: {{ elasticsearch_cluster_name }}
+#
+# ------------------------------------ Node ------------------------------------
+#
+# Use a descriptive name for the node:
+#
+node.name: {{ ansible_facts['nodename'] }}
+#
+# Add custom attributes to the node:
+#
+#true for master false for data node
+#
+#
+#
+#node.master: true for the fist elk_cluster list hosts
+#
+#
+{% if 'elk_master' in group_names %}
+node.master: true
+node.data: true
+{% else %}
+node.master: false
+node.data: true
+{% endif %}
+#false for master node true for data node
+#
+#node.data: 
+#
+#node.attr.rack: r1
+#
+# ----------------------------------- Paths ------------------------------------
+#
+# Path to directory where to store the data (separate multiple locations by comma):
+#
+path.data: /var/lib/elasticsearch
+#
+# Path to log files:
+#
+path.logs: /var/log/elasticsearch
+#
+# ----------------------------------- Memory -----------------------------------
+#
+# Lock the memory on startup:
+#
+bootstrap.memory_lock: true
+#
+# Make sure that the heap size is set to about half the memory available
+# on the system and that the owner of the process is allowed to use this
+# limit.
+#
+# Elasticsearch performs poorly when the system is swapping the memory.
+#
+# ---------------------------------- Network -----------------------------------
+#
+# Set the bind address to a specific IP (IPv4 or IPv6):
+#
+network.host: {{ inventory_hostname }} 
+#
+# Set a custom port for HTTP:
+#
+http.port: {{ elk_port }} 
+#
+# For more information, consult the network module documentation.
+#
+# --------------------------------- Discovery ----------------------------------
+#
+# Pass an initial list of hosts to perform discovery when new node is started:
+# The default list of hosts is ["127.0.0.1", "[::1]"]
+#
+discovery.seed_hosts: [{% for host in groups['elk_cluster'] %}{{host}}{% if not loop.last %},{% endif %}{% endfor %}] 
+#
+# Prevent the "split brain" by configuring the majority of nodes (total number of master-eligible nodes / 2 + 1):
+#
+#discovery.zen.minimum_master_nodes: 
+cluster.initial_master_nodes: [{% for host in groups['elk_cluster'] %}'{{ hostvars[host]['ansible_fqdn'] }}'{% if not loop.last %},{% endif %}{% endfor %}]
+#
+# For more information, consult the zen discovery module documentation.
+#
+#config one node local bind to none local adress
+#discovery.type: single-node
+#
+# ---------------------------------- Gateway -----------------------------------
+#
+# Block initial recovery after a full cluster restart until N nodes are started:
+#
+#gateway.recover_after_nodes: 3
+#
+# For more information, consult the gateway module documentation.
+#
+# ---------------------------------- Various -----------------------------------
+#
+# Require explicit names when deleting indices:
+#
+#action.destructive_requires_name: true
+#------------ X-Pack Settings--------------------------------------------------
+#
+#Enable SSL/TLS to encrypt communication between cluster nodes
+#
+xpack.security.enabled: true
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.key: /etc/elasticsearch/certs/{{ ansible_hostname }}.key
+xpack.security.transport.ssl.certificate: /etc/elasticsearch/certs/{{ ansible_hostname }}.crt
+xpack.security.transport.ssl.certificate_authorities: /etc/elasticsearch/certs/rootCA.crt
+#
+#Enable HTTPS configuration to encrypt HTTP Client Communications
+#
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.key: /etc/elasticsearch/certs/{{ ansible_hostname }}.key
+xpack.security.http.ssl.certificate: /etc/elasticsearch/certs/{{ ansible_hostname }}.crt
+xpack.security.http.ssl.certificate_authorities: /etc/elasticsearch/certs/rootCA.crt
+xpack.monitoring.collection.enabled: true

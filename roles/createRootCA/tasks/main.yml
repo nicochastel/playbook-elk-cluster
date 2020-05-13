@@ -1,0 +1,5 @@
+---
+- import_tasks: validation.yml
+
+- include_tasks: createCA.yml
+  when: ca_force_create == true or _ca_key_exists == true 

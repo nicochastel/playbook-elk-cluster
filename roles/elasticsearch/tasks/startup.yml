@@ -1,0 +1,94 @@
+---
+# Set Bootstrap Password for the first Cluster Node 
+- name: check for bootstrap password
+  shell: /usr/share/elasticsearch/bin/elasticsearch-keystore list
+  changed_when: false
+  register: es_keystore
+
+- name: set bootstrap password
+  shell: echo "{{ elk_bootstrap_password }}" | /usr/share/elasticsearch/bin/elasticsearch-keystore add -x 'bootstrap.password'
+  when: "'bootstrap.password' not in es_keystore.stdout_lines"
+
+# Start ElasticSearch
+- name: Start elasticsearch.service
+  systemd: 
+    name: elasticsearch.service
+    state: started
+
+# Waiting that all cluster nodes are started and cluster status is green
+- name: Pause play ( Max 2 minutes ) until ELK Cluster status is Green
+  uri:
+    url: https://{{ ansible_hostname }}:{{ elk_port }}/_cluster/health?pretty
+    method: GET
+    user: 'elastic'
+    password: "{{ elk_bootstrap_password }}"
+    return_content: yes
+    status_code: 200,-1
+    force_basic_auth: yes
+    body_format: json
+    validate_certs: no
+  register: _result
+  until: "'failed' not in _result.msg and _result.json.status ==  'green'"
+  retries: 12 # 12 * 10 seconds = 2minutes
+  delay: 10 # Every 10 seconds
+  when: inventory_hostname == groups['elk_master'][0] and 'bootstrap.password' not in es_keystore.stdout_lines
+
+# Change elastic password on first cluster node ( elk synchronize security password on all cluster nodes ) 
+- name: Change into elk security base the elastic password
+  uri:
+    url: https://{{ ansible_hostname }}:{{ elk_port }}/_xpack/security/user/elastic/_password
+    method: PUT
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    user: 'elastic'
+    password: "{{ elk_bootstrap_password }}"
+    return_content: yes
+    status_code: 200
+    force_basic_auth: yes
+    body_format: json
+    body:
+      password: "{{ elk_password }}"
+    validate_certs: no
+  register: _result
+  when: inventory_hostname == groups['elk_master'][0] and 'bootstrap.password' not in es_keystore.stdout_lines
+
+- name: Pause play ( Max 2 minutes ) until ELK Cluster status is Green
+  uri:
+    url: https://{{ ansible_hostname }}:{{ elk_port }}/_cluster/health?pretty
+    method: GET
+    user: 'elastic'
+    password: "{{ elk_password }}"
+    return_content: yes
+    status_code: 200,-1
+    force_basic_auth: yes
+    body_format: json
+    validate_certs: no
+  register: _result
+  until: "'failed' not in _result.msg and _result.json.status ==  'green'"
+  retries: 12 # 12 * 10 seconds = 2minutes
+  delay: 10 # Every 10 seconds
+  when: inventory_hostname == groups['elk_master'][0]
+
+# Set xpack.mononitoring.collection.enabled to true
+- name: Activate Xpack Monitoring Collections in elk  
+  uri:
+    url: https://{{ ansible_hostname }}:{{ elk_port }}/_cluster/settings?pretty
+    method: PUT
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    user: 'elastic'
+    password: "{{ elk_password }}"
+    return_content: yes
+    status_code: 200
+    force_basic_auth: yes
+    body_format: json
+    body:
+      "persistent":
+        "xpack.monitoring.collection.enabled": true
+    validate_certs: no
+  register: _result
+  when: inventory_hostname == groups['elk_master'][0]
+
+

@@ -1,0 +1,17 @@
+---
+- name: setup pipeline module system
+  command: filebeat setup --pipelines --modules system -E 'output.logstash.enabled=false' -E 'output.elasticsearch.enabled=true'
+
+- name: setup pipeline module elasticsearch for elk cluster node 
+  command: filebeat setup --pipelines --modules elasticsearch -E 'output.logstash.enabled=false' -E 'output.elasticsearch.enabled=true'
+  when: inventory_hostname == groups['elk_master'][0]
+
+- name: setup dashboard load to kibana
+  command: filebeat setup -E 'output.logstash.enabled=false' -E 'output.elasticsearch.enabled=true'
+  when: inventory_hostname == groups['filebeat'][0]
+
+- name: Start filebeat.service
+  systemd:
+    name: filebeat.service
+    state: restarted
+

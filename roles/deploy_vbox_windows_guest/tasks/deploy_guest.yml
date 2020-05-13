@@ -1,0 +1,51 @@
+- name: Create Local files temporary sub-directory 
+  file: 
+     path: '{{ role_path }}/files/{{ inventory_hostname }}'
+     state: directory
+  delegate_to: localhost
+
+- name: Create cloud-init files
+  template:
+     src: '{{ item.src }}'
+     dest: '{{ role_path }}/files/{{ inventory_hostname }}/{{ item.dst }}'
+  with_items:
+     - { src: 'user-data.j2', dst: 'user-data' }
+     - { src: 'meta-data.j2', dst: 'meta-data' }
+  delegate_to: localhost
+
+- name: Built cloud-init iso
+  shell: |
+    genisoimage -output '{{ role_path }}/files/{{ inventory_hostname }}/CI_disk_{{ inventory_hostname }}.iso' -volid cidata -R -J '{{ role_path }}/files/{{ inventory_hostname }}/user-data' '{{ role_path }}/files/{{ inventory_hostname }}/meta-data'
+  delegate_to: localhost
+
+- name: Customize Powershell script
+  template:
+     src: '{{ item.src }}'
+     dest: '{{ role_path }}/files/{{ inventory_hostname }}/{{ item.dst }}'
+  with_items:
+     - { src: 'VBox-create.j2', dst: 'VBox-create-{{ inventory_hostname }}.ps1' }
+     - { src: 'VBox-umount-CI.j2', dst: 'VBox-umount-CI-{{ inventory_hostname }}.ps1' }  
+  delegate_to: localhost
+
+- delegate_to: "{{ on_hypervisor }}"
+  block:
+  - name: Copy cloud-init iso to VBox hypervisor host 
+    win_copy:
+     src: '{{ role_path }}/files/{{ inventory_hostname }}/CI_disk_{{ inventory_hostname }}.iso'
+     dest: 'C:\temp\'
+     remote_src: no
+
+  - name: Copy PowerShell compiled to VBox hypervisor host
+    win_copy:
+     src: '{{ role_path }}/files/{{ inventory_hostname }}/VBox-create-{{ inventory_hostname }}.ps1'
+     dest: 'C:\temp\'
+     remote_src: no
+
+  - name: run powershell script on VBox hypervisor
+    win_shell: 'C:/temp/VBox-create-{{ inventory_hostname }}.ps1'
+    register: result
+
+- debug: var=result.stdout_lines
+
+- debug: var=result.stderr_lines
+

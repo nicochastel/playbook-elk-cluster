@@ -1,0 +1,33 @@
+- delegate_to: "{{ on_hypervisor }}"
+  block:
+  - name: Copy PowerShell compiled to VBox hypervisor host
+    win_copy:
+      src: '{{ role_path }}/files/{{ inventory_hostname }}/VBox-umount-CI-{{ inventory_hostname }}.ps1'
+      dest: 'C:\temp\'
+      remote_src: no
+
+  - name: run powershell script on VBox hypervisor
+    win_shell: 'C:/temp/VBox-umount-CI-{{ inventory_hostname }}.ps1'
+    register: result
+
+  - debug: var=result.stdout_lines
+
+  - debug: var=result.stderr_lines
+
+  - name: Delete remote files
+    win_shell: if (Test-Path C:\temp\{{ item }} ){Remove-Item C:\temp\{{ item }} }
+    with_items:
+      - VBox-create-{{ inventory_hostname }}.ps1
+      - CI_disk_{{ inventory_hostname }}.iso
+      - VBox-umount-CI-{{ inventory_hostname }}.ps1
+
+- name: Remove local temporary files
+  file: 
+    path: '{{ role_path }}/files/{{ inventory_hostname }}/{{ item }}'
+    state: absent
+  with_items:
+      - CI_disk_{{ inventory_hostname }}.iso
+      - user-data
+      - meta-data
+      - VBox-create-{{ inventory_hostname }}.ps1
+  delegate_to: localhost

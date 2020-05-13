@@ -1,0 +1,6 @@
+instances:
+{% for host in groups['centos'] %}
+  - name: '{{ hostvars[host]['ansible_hostname'] }}'
+    dns: ['{{ hostvars[host]['ansible_fqdn'] }}']
+    ip: ['{{ host }}']
+{% endfor %}

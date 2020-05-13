@@ -1,0 +1,25 @@
+# Module: elasticsearch
+# Docs: https://www.elastic.co/guide/en/beats/metricbeat/7.6/metricbeat-module-elasticsearch.html
+- module: elasticsearch
+  metricsets:
+    - ccr
+    - cluster_stats
+    - enrich
+    - index
+    - index_recovery
+    - index_summary
+    - ml_job
+    - node_stats
+    - shard
+  period: 10s
+  hosts: [{% for host in groups['elk_cluster'] %}"https://{{host}}:{{elk_port}}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  username: "elastic"
+  password: "{{ elk_password }}"
+  ssl.certificate_authorities: ["/etc/metricbeat/certs/rootCA.crt"]
+
+  # Set to false to fetch all entries
+  index_recovery.active_only: false
+
+  # Set to true to send data collected by module to X-Pack
+  # Monitoring instead of metricbeat-* indices.
+  xpack.enabled: true

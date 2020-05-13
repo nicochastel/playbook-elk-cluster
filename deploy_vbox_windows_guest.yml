@@ -1,0 +1,7 @@
+---
+   - hosts: VBox_Guests
+     gather_facts: false
+     roles: 
+        - deploy_vbox_windows_guest
+
+

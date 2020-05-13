@@ -1,0 +1,33 @@
+---
+########################################################
+# Create CA Certificate 
+########################################################
+# Create directory /etc/pki/ folders if necessary
+- name: create directory if they don't exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+  with_items:
+    - /etc/pki/CA
+    - /etc/pki/CA/private
+    - /etc/pki/CA/certs
+  delegate_to: localhost
+
+- name: "generate CA private key /etc/pki/CA/private/{{ ca_key }}"
+  shell:
+    "{{ item }}"
+  args:
+    chdir: "/etc/pki/CA/private"
+  with_items:
+    - "openssl genrsa -out {{ ca_key }} 2048"
+  
+- name: "create root CA cert /etc/pki/CA/certs/{{ ca_cert }}"
+  shell:
+    "{{ item }}"
+  args:
+    chdir: "/etc/pki/CA/certs"
+  with_items:
+    - "openssl req -new -nodes -key /etc/pki/CA/private/{{ ca_key }} -x509 -days 3650 -out {{ ca_cert }} -subj /C='{{ ca_country }}'/ST='{{ ca_state }}'/O='{{ ca_organization }}'/CN='{{ ca_commonname }}'"

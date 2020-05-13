@@ -1,0 +1,9 @@
+elasticsearch_version: '7.6.0-1'
+elasticsearch_cluster_name: nico_cluster
+elasticsearch_depot: '7.x'
+logstash_filebeat_port: '5044'
+elk_port: '9200'
+kibana_port: '5601'
+elk_jvm_heap_size: '1g'
+elk_bootstrap_password: 'toto'
+elk_password: 'Euskal1965!'

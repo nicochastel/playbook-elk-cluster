@@ -1,0 +1,21 @@
+$VboxInstallPath = '{{ VboxInstallPath }}'
+$VboxVMFolderPath = '{{ VboxVMFolderPath }}'
+$VdiImageFolder = '{{ VdiImageFolder  }}'
+$VdiImageName = '{{ VdiImageName }}'
+$VMGuestName = '{{ inventory_hostname }}'
+$VMGuestRAM = '{{ guest_ram }}'
+$VMGuestCPU = '{{ guest_cpu }}'
+$VMGuestOsType = '{{ guest_os_type }}'
+
+# End variable initialization 
+
+$Stage = 0
+$Stage =$Stage + 1 
+
+# Force eject CI dvd 
+Write-Host "Stage$Stage : Eject CI_disk_${VMGuestName}.iso"
+set-location $VboxInstallPath
+$attach = (& .\VBoxManage storageattach $VMGuestName --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "emptydrive" --forceunmount)
+$suppress = (& .\VBoxManage closemedium  dvd "C:\temp\CI_disk_${VMGuestName}.iso")
+$Stage = $Stage + 1
+

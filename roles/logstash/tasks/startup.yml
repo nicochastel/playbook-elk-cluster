@@ -1,0 +1,5 @@
+---
+- name: Start logstash.service
+  systemd:
+    name: logstash.service
+    state: restarted

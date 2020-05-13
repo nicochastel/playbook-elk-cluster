@@ -1,0 +1,34 @@
+---
+########################################################
+# Set up Filebeat
+########################################################
+
+- name: Install filebeat
+  yum:
+    name: filebeat-{{ elasticsearch_version }}
+    state: latest
+    update_cache: yes
+
+- name: Create filebeat config
+  template:
+    src: filebeat.config.j2
+    dest: /etc/filebeat/filebeat.yml
+
+- name: Copy system modules config
+  template:
+    src: system.config.j2
+    dest: /etc/filebeat/modules.d/system.yml
+
+- name: Copy filebeat elasticsearch modules on elk cluster node only
+  template:
+    src: elasticsearch.config.j2
+    dest: /etc/filebeat/modules.d/elasticsearch.yml
+  when: "'elk_cluster' in group_names" 
+
+- name: Force systemd to reread configs
+  systemd: daemon_reload=yes
+
+- name: Enable filebeat.service
+  systemd:
+    name: filebeat.service
+    enabled: yes

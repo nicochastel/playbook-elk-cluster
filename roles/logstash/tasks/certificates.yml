@@ -1,0 +1,75 @@
+---
+###############################################################
+# Deploy Certicates generated on elk and downloaded on Ansible
+###############################################################
+
+# Check for CA key existence (so we don't getnerate a new onw on every run)
+- name: "Check if /etc/logstash/certs/{{ ansible_hostname }}.key already exists"
+  stat: path="/etc/logstash/certs/{{ ansible_hostname }}.key"
+  register: __key_file
+
+- block:
+    - name: Create certificate directory
+      file:
+        state: directory
+        path: /etc/logstash/certs
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Copy the CA certificate and CA provate key  from ansible to remote node
+      copy:
+        src: '/etc/pki/CA/{{ item.src }}'
+        dest: '/etc/logstash/certs/{{ item.dst }}'
+        backup: no
+      with_items:
+        - { src: 'private/rootCA.key', dst: 'rootCA.key' }
+        - { src: 'certs/rootCA.crt', dst: 'rootCA.crt' }
+
+    - name: "Generate the client private key file"
+      openssl_privatekey:
+        path: "/etc/logstash/certs/{{ ansible_hostname }}.key"
+        mode: "0644"
+
+    - name: "Generate the CSR file signed with the private key"
+      openssl_csr:
+        path: "/etc/logstash/certs/{{ ansible_hostname }}.csr"
+        privatekey_path: "/etc/logstash/certs/{{ ansible_hostname }}.key"
+        common_name: "{{ ansible_hostname }}"
+        subject_alt_name: 'DNS:{{ ansible_fqdn }},IP:{{ inventory_hostname }}'
+
+    - name: "Sign the CSR file with my ower authorithy"
+      openssl_certificate:
+        path: "/etc/logstash/certs/{{ ansible_hostname }}.crt"
+        ownca_privatekey_path: "/etc/logstash/certs/rootCA.key"
+        ownca_path: "/etc/logstash/certs/rootCA.crt"
+        csr_path: "/etc/logstash/certs/{{ ansible_hostname }}.csr"
+        provider: ownca
+
+    - name: Convert filebeat key to pks8 extension for input module logstash lumberjack protocol
+      command: openssl pkcs8 -in /etc/logstash/certs/{{ ansible_hostname }}.key -topk8 -nocrypt -out /etc/logstash/certs/{{ ansible_hostname }}.pkcs8.key
+
+    - name: Change file permission on key file pks8
+      file:
+        path: /etc/logstash/certs/{{ ansible_hostname }}.pkcs8.key
+        owner: root
+        group: root
+        mode: 0755
+  when: __key_file.stat.islnk is not defined
+
+# Waiting that Kibana status was ok
+- name: Pause play ( Max 2 minutes ) until Kibana status is Green
+  uri:
+    url: https://{{ groups['kibana'][0] }}:{{ kibana_port}}/api/status?pretty
+    method: GET
+    user: 'elastic'
+    password: "{{ elk_password }}"
+    return_content: yes
+    status_code: 200,-1
+    force_basic_auth: yes
+    body_format: json
+    validate_certs: no
+  register: _result
+  until: "'Failed' not in _result.msg and 'green' in  _result.content"
+  retries: 12 # 12 * 10 seconds = 2minutes
+  delay: 10 # Every 10 seconds

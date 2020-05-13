@@ -1,0 +1,56 @@
+---
+########################################################
+# Set up ElasticSearch
+########################################################
+
+- name: Install elasticsearch
+  yum: 
+    name: elasticsearch-{{ elasticsearch_version }}
+    state: latest 
+    update_cache: yes
+
+- name: Create elasticsearch config
+  template:
+    src: elasticsearch.config.j2
+    dest: /etc/elasticsearch/elasticsearch.yml
+    backup: yes
+
+- name: copie jvm option template
+  template:
+    src: jvm.options.j2
+    dest: /etc/elasticsearch/jvm.options
+    backup: yes
+
+- name: create elasticsearch.service.d directory
+  file: path=/etc/systemd/system/elasticsearch.service.d mode=755 state=directory owner=root group=root
+
+- name: copie elastic service settings 
+  template:
+    src: override.j2
+    dest: /etc/systemd/system/elasticsearch.service.d/override.conf
+    backup: yes
+
+- name: Force systemd to reread configs
+  systemd: daemon_reload=yes
+
+- name: Enable elasticsearch.service
+  systemd:
+    name: elasticsearch.service
+    enabled: yes
+
+- name: permit port {{ elk_port }} for elasticsearch REST 
+  firewalld: 
+    port: "{{ elk_port }}/tcp"
+    state: enabled
+    permanent: yes
+
+- name: permit port 9300 for elasticsearch node communication
+  firewalld: 
+    port: 9300/tcp
+    state: enabled
+    permanent: yes
+
+- name: restart firewalld service
+  systemd:
+    name: firewalld
+    state: restarted

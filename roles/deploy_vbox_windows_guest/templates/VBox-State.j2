@@ -1,0 +1,17 @@
+$VboxInstallPath = '{{ VboxInstallPath }}'
+$VboxVMFolderPath = '{{ VboxVMFolderPath }}'
+$VMGuestName = '{{ VMGuestName }}'
+$VdiImageFolder = '{{ VdiImageFolder }}'
+$VdiImageName = ' {{ VdiImageName  }}'
+# List VMs found on VirtualBox Host
+set-location $VboxInstallPath
+$lst_vm=(.\vboxmanage list vms | foreach { $_.split(' ') } | foreach { $_.split('"') } | where { $_-notmatch "{" } | where { $_ -notlike $null } )
+
+
+foreach ($i in $lst_vm ) {
+
+
+$vmstate = (& .\vboxmanage showvminfo $i --machinereadable | % { if ($_ -like 'VMState="*"') { $_ } })
+#$vmstate = (& .\vboxmanage showvminfo $i --machinereadable)
+Write-Host $i $vmstate
+}

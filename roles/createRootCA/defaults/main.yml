@@ -1,0 +1,11 @@
+---
+# defaults file for createROOT-CA
+#
+# ca_force_create & ca_force_certify_nodes are designed to prevent overiding of existing certificates !
+
+ca_force_create: true 
+_ca_key_exists: false 
+_ca_missing_cert: true 
+
+# how long should remain before we generate a new CA cert ?
+ca_cert_expiration_panic_threshold: 604800 # 1 week

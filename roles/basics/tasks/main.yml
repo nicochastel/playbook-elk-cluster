@@ -1,0 +1,38 @@
+- set_fact: role_name=basics
+
+##################################################
+### Basic system packages and firewall config
+- name: Install basic packages
+  yum: 
+   state: present
+   name:
+    - yum-utils
+    - bind-utils
+    - vim
+    - git
+    - curl
+    - wget
+    - man
+    - lsof
+    - zip
+    - unzip
+    - firewalld
+    - mlocate
+    - openssl
+
+- name: Set up firewall
+  shell: systemctl enable firewalld
+
+- name: Start the firewall
+  shell: systemctl start firewalld
+
+- name: Install epel from remote repo
+  yum: name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm state=present
+
+- name: Install basic Epel packages
+  yum: 
+   state: present
+   name:
+    - nmon  
+    - htop
+

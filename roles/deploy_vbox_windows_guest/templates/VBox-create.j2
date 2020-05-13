@@ -1,0 +1,71 @@
+$VboxInstallPath = '{{ VboxInstallPath }}'
+$VboxVMFolderPath = '{{ VboxVMFolderPath }}'
+$VdiImageFolder = '{{ VdiImageFolder  }}'
+$VdiImageName = '{{ VdiImageName }}'
+$VMGuestName = '{{ inventory_hostname }}'
+$VMGuestRAM = '{{ guest_ram }}'
+$VMGuestCPU = '{{ guest_cpu }}'
+$VMGuestOsType = '{{ guest_os_type }}'
+
+# End variable initialization 
+
+$Stage = 0
+$Stage =$Stage + 1 
+
+# Find Natnetwork Name of VBox Host
+Write-Host "Stage$Stage : Create VM $VMGuestName"
+set-location $VboxInstallPath
+$NatName = (& .\VBoxManage list natnetworks | Select-String -Pattern '^NetworkName: *' | Foreach-Object { $_.ToString().split(':')[1] -replace '^\s*','' } )
+
+#Create VM
+$date = Get-date
+$create = (& .\vboxmanage createvm --name $VMGuestName --register --basefolder $VboxVMFolderPath)
+$Stage =$Stage + 1 
+
+# Copy Cloud image to disk VM Folder 
+
+$Image = $VdiImageFolder + '\' + $VdiImageName
+$Disk = $VboxVMFolderPath + '\' + $VMGuestName + '\' + $VMGuestName + '-disk1.vdi'
+Write-Host "Stage$Stage : Create Disk from Cloud Image $Image"
+if(-Not (Test-Path -Path $Image)) {
+    Write-Host "Image $Image doesn't exist"
+# destroy VM created above folder and exit 1
+    set-location $VboxInstallPath
+    $destroy = (& .\vboxmanage "unregistervm" $VMGuestName )
+    $targetdir = $VboxVMFolderPath + '\' + $VMGuestName
+    Remove-Item $targetDir -Recurse -Force
+    Exit
+    }
+copy-item $Image $Disk
+# Generate a random UUID of VDI disk
+$UUID = (& .\vboxmanage internalcommands sethduuid "$Disk")
+$Stage =$Stage + 1 
+
+#Modif VM properties
+Write-Host "Stage$Stage : Modify VM properties"
+set-location $VboxInstallPath
+$modify = (& .\vboxmanage modifyvm $VMGuestName --description "Created By Ansible at $date" --ostype=$VMGuestOsType --nic1=natnetwork --nictype1=82540EM --cableconnected1=on --vram=16 --memory=$VMGuestRAM --cpus=$VMGuestCPU --x2apic=on --ioapic=on --graphicscontroller vmsvga --rtcuseutc=on)
+$Stage =$Stage + 1 
+
+# Create Storage devices 
+Write-Host "Stage$Stage : Create VM Storage device"
+set-location $VboxInstallPath
+$modify = (& .\VBoxManage storagectl $VMGuestName --name "IDE" --add ide )
+$modify = (& .\VBoxManage storagectl $VMGuestName --name "SATA" --add sata )
+$modify = (& .\VBoxManage storageattach $VMGuestName --storagectl "SATA" --port 0 --device 0 --type hdd --medium "$Disk") 
+# Attach cloud-init iso if exist
+if( Test-Path -Path "C:\temp\CI_disk_${VMGuestName}.iso" ) {
+   $attach = (& .\VBoxManage storageattach $VMGuestName --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "C:\temp\CI_disk_${VMGuestName}.iso")
+}
+$Stage = $Stage + 1
+
+# Start new VM
+Write-Host "Stage$Stage : Starting VM $VMGuestName ..."
+set-location $VboxInstallPath
+$start = (& ./vboxmanage startvm $VMGuestName --type headless)
+$Stage = $Stage + 1
+# Display new VM properties
+set-location $VboxInstallPath
+$vmstate = (& .\vboxmanage showvminfo $VMGuestName --machinereadable | % { if ($_ -like 'VMState="*"') { $_ } })
+
+Write-Host "`t$VMGuestName $vmstate"

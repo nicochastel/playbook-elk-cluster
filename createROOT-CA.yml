@@ -1,0 +1,15 @@
+# This playbook is for create rootCA
+# You can run this playbook with the following command:
+
+- hosts: localhost 
+  remote_user: root 
+  become: true
+  vars:
+  - ca_cert: 'rootCA.crt'
+  - ca_key: 'rootCA.key'
+  - ca_country: 'FR'
+  - ca_state: 'France'
+  - ca_organization: 'Groupe Nico'
+  - ca_commonname: 'PKI Nico'
+  roles:
+    - role: createRootCA      

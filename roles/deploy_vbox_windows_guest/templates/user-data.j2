@@ -1,0 +1,50 @@
+#cloud-config
+
+#datasource
+datasource_list: [ NoCloud ]
+
+# Hostname management
+disable_root: False
+preserve_hostname: False
+hostname: {{ inventory_hostname }}
+fqdn: {{ inventory_hostname }}.{{ guest_domain }}
+
+# Remove cloud-init when finished with it
+runcmd:
+  - echo "runcmd started"
+  - ifdown enp0s3
+  - echo "DNS1={{ guest_dns1 }}" >> /etc/sysconfig/network-scripts/ifcfg-enp0s3
+  - echo "DNS2={{ guest_dns2 }}" >> /etc/sysconfig/network-scripts/ifcfg-enp0s3
+  - echo "DOMAIN={{ guest_domain  }}" >> /etc/sysconfig/network-scripts/ifcfg-enp0s3
+  - ifup enp0s3
+  - [ yum, -y, remove, cloud-init ]
+  - localectl set-keymap fr
+  - echo "runcmd ended"
+
+# Configure where output will go
+output: 
+  all: ">> /var/log/cloud-init.log"
+
+# configure interaction with ssh server
+ssh_svcname: ssh
+ssh_deletekeys: True
+ssh_genkeytypes: ['rsa', 'ecdsa']
+ssh_pwauth:   True
+
+users:
+  - default
+  - name: root
+    ssh_authorized_keys:
+      - '{{ AnsiblePublicKey }}'
+  - name: ansible
+    lock_passwd: True
+    primary_group: users
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - '{{ AnsiblePublicKey }}'
+ 
+chpasswd:
+  list: |
+    root:Euskal1965!
+  expire: False
+ 

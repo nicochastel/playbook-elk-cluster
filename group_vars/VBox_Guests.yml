@@ -1,0 +1,6 @@
+VboxInstallPath: 'C:\Program Files\Oracle\VirtualBox'
+VboxVMFolderPath: 'C:\Users\n.chastel\VirtualBox VMs'
+VdiImageFolder: 'C:\Users\n.chastel\Documents\Script-deploiement-centos-virtualbox-ansible\vbox-provisioning-nat-1centos8'
+VdiImageName: 'NewCentOS-8.1.1911-x86_64-sysprep-lvm.vdi'
+AnsiblePublicKey: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC8qfpa1BnlmJtHuxKWindB/F7xSHi/122FRk2J30ehKhnkKs6eTLs5H6oKx8rzFJV9vIY22ZCS1mNvJLrEHBTwA5oQkDPoZVY1C8PGqQf1+53tmeYKDG6Oxc3/SBpYGElOD8RYezr1nGGV7GUJGfjOkNpe2wtkdjl3JavMZThKLnqRTfej3JpDpOOvGGdDtVJrUR07csdXLkswCp4s8VQY8Z7Md+KCHmejbenxmIIY9Y/G1C6SP4YFDhZzvJuMx8iVWR4MJU6MD4A8gxZQfsID3ptyDfUxFv9kavu6Oya04qB6ynK7TkMtmlh+Mh5Vi92mCGle00V9LMa1AUPQ2hVUYis+Xqp/RL0SeX+ZL8AYzerx9bS64zc5Wy92vNAi/U/crXmBjqPn5hx2z+JiAJlxCuwcHA2gbWVkZBSHMhNH8PJC3j4F64K4orjmXoldf9km/QxnX83dJfnhQCZxuWz1Uv9BY+rBZwiEpRlLiEDJsL+E7AxW5oloyu4Q1oDehdk= root@nico-1'
+

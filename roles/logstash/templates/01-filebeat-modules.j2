@@ -1,0 +1,35 @@
+input {
+  beats {
+    port => "{{ logstash_filebeat_port }}" 
+    ssl => true
+    ssl_certificate_authorities => "/etc/logstash/certs/rootCA.crt"
+    ssl_certificate => "/etc/logstash/certs/{{ ansible_hostname }}.crt"
+    ssl_key => "/etc/logstash/certs/logstash1.pkcs8.key"
+    ssl_verify_mode => "peer"
+  }
+}
+
+output {
+  if [@metadata][pipeline] {
+    elasticsearch {
+      hosts => [{% for host in groups['elk_cluster'] %}"https://{{host}}:{{elk_port}}"{% if not loop.last %}, {% endif %}{% endfor %}] 
+      cacert => "/etc/logstash/certs/rootCA.crt"
+      ssl => true
+      user => 'elastic'
+      password => "{{ elk_password }}"
+      manage_template => false
+      index => "%{[@metadata][beat]}-%{[@metadata][version]}-%{+YYYY.MM.dd}"
+      pipeline => "%{[@metadata][pipeline]}" 
+    }
+  } else {
+    elasticsearch {
+      hosts => [{% for host in groups['elk_cluster'] %}"https://{{host}}:{{elk_port}}"{% if not loop.last %}, {% endif %}{% endfor %}] 
+      cacert => "/etc/logstash/certs/rootCA.crt"
+      ssl => true
+      user => 'elastic'
+      password => "{{ elk_password }}"
+      manage_template => false
+      index => "%{[@metadata][beat]}-%{[@metadata][version]}-%{+YYYY.MM.dd}"
+    }
+  }
+}

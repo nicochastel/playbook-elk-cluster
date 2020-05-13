@@ -1,0 +1,9 @@
+---
+    - import_playbook: deploy_vbox_windows_guest.yml
+    - import_playbook: common-centos.yml
+    - import_playbook: createROOT-CA.yml 
+    - import_playbook: elasticsearch.yml
+    - import_playbook: kibana.yml
+    - import_playbook: logstash.yml
+    - import_playbook: filebeat.yml
+    - import_playbook: metricbeat.yml

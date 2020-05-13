@@ -1,0 +1,12 @@
+---
+########################################################
+# Prepare to setup Elastic Stack
+########################################################
+
+- name: Create elasticsearch {{ elasticsearch_depot }} repository 
+  yum_repository:
+    name: elasticsearch-{{ elasticsearch_depot }}
+    description: elasticsearch packages 
+    baseurl: https://artifacts.elastic.co/packages/{{ elasticsearch_depot }}/yum
+    gpgcheck: true
+    gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch

@@ -1,0 +1,10 @@
+instance-id: {{ inventory_hostname }}; 
+network-interfaces: |
+  auto enp0s3
+  iface enp0s3 inet static
+  bootproto static
+  address {{ guest_ip }}
+  netmask {{ guest_mask }}
+  broadcast {{ guest_broad }}
+  gateway {{ guest_gw }}
+local-hostname: {{ inventory_hostname }}

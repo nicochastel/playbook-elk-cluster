@@ -1,0 +1,7 @@
+########################################################
+# Set up Logstash
+########################################################
+---
+- import_tasks: install.yml
+- import_tasks: certificates.yml
+- import_tasks: startup.yml

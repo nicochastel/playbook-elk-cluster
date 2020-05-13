@@ -1,0 +1,49 @@
+---
+###############################################################
+# Deploy Certicates generated on elk and downloaded on Ansible
+###############################################################
+# Check for CA key existence (so we don't getnerate a new onw on every run)
+- name: "Check if /etc/elasticsearch/certs/{{ ansible_hostname }}.key already exists"
+  stat: path="/etc/elasticsearch/certs/{{ ansible_hostname }}.key"
+  register: __key_file
+
+- block:
+    - name: Create certificate directory
+      file:
+        state: directory
+        path: /etc/kibana/certs
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Copy the CA certificate and CA provate key  from ansible to remote node
+      copy:
+        src: '/etc/pki/CA/{{ item.src }}'
+        dest: '/etc/kibana/certs/{{ item.dst }}'
+        backup: no
+      with_items:
+        - { src: 'private/rootCA.key', dst: 'rootCA.key' }
+        - { src: 'certs/rootCA.crt', dst: 'rootCA.crt' }
+
+    - name: "Generate the client private key file"
+      openssl_privatekey:
+        path: "/etc/kibana/certs/{{ ansible_hostname }}.key"
+        mode: "0644"
+
+    - name: "Generate the CSR file signed with the private key"
+      openssl_csr:
+        path: "/etc/kibana/certs/{{ ansible_hostname }}.csr"
+        privatekey_path: "/etc/kibana/certs/{{ ansible_hostname }}.key"
+        common_name: "{{ ansible_hostname }}"
+        subject_alt_name: 'DNS:{{ ansible_fqdn }},IP:{{ inventory_hostname }}'
+
+    - name: "Sign the CSR file with my ower authorithy"
+      openssl_certificate:
+        path: "/etc/kibana/certs/{{ ansible_hostname }}.crt"
+        ownca_privatekey_path: "/etc/kibana/certs/rootCA.key"
+        ownca_path: "/etc/kibana/certs/rootCA.crt"
+        csr_path: "/etc/kibana/certs/{{ ansible_hostname }}.csr"
+        provider: ownca
+  when: __key_file.stat.islnk is not defined
+
+

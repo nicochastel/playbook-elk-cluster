@@ -1,0 +1,18 @@
+- delegate_to: "{{ on_hypervisor }}"
+  block:
+  - name: Delete remote files
+    win_shell: if (Test-Path C:\temp\{{ item }} ){Remove-Item C:\temp\{{ item }} }
+    with_items:
+      - VBox-create-{{ inventory_hostname }}.ps1
+
+- name: Remove local temporary files
+  file: 
+    path: '{{ role_path }}/files/{{ inventory_hostname }}/{{ item }}'
+    state: absent
+  with_items:
+      - CI_disk_{{ inventory_hostname }}.iso
+      - user-data
+      - meta-data
+      - VBox-create-{{ inventory_hostname }}.ps1
+      - VBox-umount-CI-{{ inventory_hostname }}.ps1
+  delegate_to: localhost

@@ -1,0 +1,4 @@
+---
+- import_tasks: deploy_guest.yml
+- import_tasks: configure_guest_os_minimal.yml
+- import_tasks: cleanup_temporary_files.yml

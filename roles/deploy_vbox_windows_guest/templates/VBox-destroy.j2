@@ -1,0 +1,32 @@
+$VboxInstallPath = 'D:\Oracle\VirtualBox'
+$VboxVMFolderPath = 'D:\Oracle\VirtualBox VMs'
+$VMGuestName = 'client4'
+$VMGuestOsType = 'Red Hat (64-bit)'
+$VdiImageFolder = 'D:\Oracle\Image Cloud'
+#$VdiImageName = 'CentOS-7-x86_64-GenericCloud-1805.vdi'
+$VdiImageName = 'NewCentOS-8.1.1911-x86_64-sysprep-lvm.vdi'
+
+# End variable initialization 
+
+$Stage = 0
+$Stage =$Stage + 1 
+
+# List VMs 
+Write-Host "Stage$Stage : List VMs"
+# List VMs found on VirtualBox Host
+$lst_vm=(.\vboxmanage list vms | foreach { $_.split(' ') } | foreach { $_.split('"') } | where { $_-notmatch "{" } | where { $_ -notlike $null } )
+$Stage =$Stage + 1 
+
+foreach ($i in $lst_vm ) {
+    if ( $i -match $VMGuestName ) {
+# Destroy VM
+        Write-Host "Stage$Stage : Destroy $i"
+        set-location $VboxInstallPath
+        $destroy = (.\vboxmanage "unregistervm" $i )
+        $targetdir = $VboxVMFolderPath + '\' + $VMGuestName
+        Remove-Item $targetDir -Recurse -Force
+    }
+}
+
+
+

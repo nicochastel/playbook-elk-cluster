@@ -1,0 +1,15 @@
+- name: Waiting all VM guest are up
+  wait_for:
+    port: 22
+    host: '{{ hostvars[item]["guest_ip"] }}'
+    delay: 10
+  with_items: '{{play_hosts}}'
+  delegate_to: localhost
+
+- name: accept new ssh fingerprints
+  shell: ssh-keyscan {{ hostvars[item]['guest_ip'] }},{{ item }} >> ~/.ssh/known_hosts
+  with_items: '{{play_hosts}}'
+  run_once: true
+  delegate_to: localhost
+
+

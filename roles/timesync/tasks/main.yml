@@ -1,0 +1,139 @@
+---
+
+- name: Determine current NTP provider
+  timesync_provider:
+  when:
+    - timesync_ntp_provider == ''
+
+- name: Select NTP provider
+  set_fact:
+    timesync_ntp_provider: "{{ timesync_ntp_provider_os_default if timesync_ntp_provider_current == '' else timesync_ntp_provider_current }}"
+  when:
+    - timesync_ntp_provider == ''
+
+- name: Install chrony
+  package:
+    name: chrony
+    state: present
+  when:
+    - timesync_ntp_provider == 'chrony'
+
+- name: Install ntp
+  package:
+    name: ntp
+    state: present
+  when:
+    - timesync_ntp_provider == 'ntp'
+
+- name: Get chrony version
+  command: rpm -q --qf '%{version}' chrony
+  args:
+    warn: false
+  register: timesync_chrony_version
+  changed_when: false
+  check_mode: false
+  when: timesync_ntp_provider == 'chrony'
+
+- name: Get ntp version
+  command: rpm -q --qf '%{version}' ntp
+  args:
+    warn: false
+  register: timesync_ntp_version
+  changed_when: false
+  check_mode: false
+  when:
+    - timesync_ntp_provider == 'ntp'
+
+- name: Generate chrony.conf file
+  template:
+    src: chrony.conf.j2
+    dest: /etc/chrony.conf
+    backup: true
+    mode: 0644
+  notify: restart {{ 'chronyd' }}
+  when:
+    - timesync_ntp_provider == 'chrony'
+
+- name: Generate chronyd sysconfig file
+  template:
+    src: chronyd.sysconfig.j2
+    dest: /etc/sysconfig/chronyd
+    backup: true
+    mode: 0644
+  notify: restart chronyd
+  when:
+    - timesync_ntp_provider == 'chrony'
+
+- name: Generate ntp.conf file
+  template:
+    src: ntp.conf.j2
+    dest: /etc/ntp.conf
+    backup: true
+    mode: 0644
+  notify: restart {{ 'ntpd' }}
+  when:
+    - timesync_ntp_provider == 'ntp'
+
+- name: Generate ntpd sysconfig file
+  template:
+    src: ntpd.sysconfig.j2
+    dest: /etc/sysconfig/ntpd
+    backup: true
+    mode: 0644
+  notify: restart ntpd
+  when:
+    - timesync_ntp_provider == 'ntp'
+
+- name: Update network sysconfig file
+  lineinfile:
+    dest: /etc/sysconfig/network
+    create: true
+    backup: true
+    mode: 0644
+    regexp: '^PEERNTP='
+    line: 'PEERNTP=no'
+    state: "{{ 'absent' if timesync_dhcp_ntp_servers else 'present' }}"
+  notify: restart {{ timesync_ntp_provider + 'd' }}
+
+- name: Disable chronyd
+  service:
+    name: chronyd
+    state: stopped
+    enabled: false
+  when: timesync_ntp_provider != 'chrony'
+  ignore_errors: true
+
+- name: Disable ntpd
+  service:
+    name: ntpd
+    state: stopped
+    enabled: false
+  when: timesync_ntp_provider != 'ntp'
+  ignore_errors: true
+
+- name: Disable ntpdate
+  service:
+    name: ntpdate
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Enable chronyd
+  service:
+    name: chronyd
+    state: started
+    enabled: true
+  when:
+    - timesync_ntp_provider == 'chrony'
+
+- name: Enable ntpd
+  service:
+    name: ntpd
+    state: started
+    enabled: true
+  when:
+    - timesync_ntp_provider == 'ntp'
+
+- name: Set timezone
+  timezone:
+    name: "{{ timesync_timezone }}"

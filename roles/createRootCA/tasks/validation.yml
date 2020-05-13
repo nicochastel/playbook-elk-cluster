@@ -1,0 +1,49 @@
+# Check for CA key existence (so we don't getnerate a new onw on every run)
+- name: "Check if /etc/pki/CA/private/{{ ca_key }} certificate exsists"
+  stat: path="/etc/pki/CA/private/{{ ca_key }}"
+  register: __key_file
+
+- block:
+    - name: "verify /etc/pki/CA/private/{{ ca_key }} status"
+      debug: msg="/etc/pki/CA/private/{{ ca_key }} is present
+                  - setting fact _ca_key_exists [ internal fact with _ prefix ] to true - this role will not generate a new one"
+
+    - name: "set _ca_key_exists var to true"
+      set_fact:
+        __ca_key_exists: false 
+        #_ca_key_exists: false 
+  when: __key_file.stat.exists
+
+- name: "Show _ca_key_exists value"
+  debug: msg="variable _ca_key_exists is set to {{ _ca_key_exists }}"
+
+# Check for CA cert existence (so we don't getnerate a new onw on every run)
+- name: "Check if /etc/pki/CA/certs/{{ ca_cert }} certificate exsists"
+  stat: path="/etc/pki/CA/certs/{{ ca_cert }}"
+  register: cert_file
+
+- block:
+    - name: "Check certificate expiration date [ Expecting more than a week before setting regeneration var ... ]"
+      shell: "openssl x509 -checkend {{ ca_cert_expiration_panic_threshold }} -noout -in /etc/pki/CA/certs/{{ ca_cert }}"
+      register: cert_validity
+
+    - debug: msg="/etc/pki/CA/certs/{{ ca_cert }} is still valid no need to generate"
+      when: cert_validity and cert_validity.rc == 0
+
+    - set_fact:
+        ca_force_create: false
+        _ca_missing_cert: false
+  when: cert_file.stat.exists
+
+  rescue:
+    - debug: msg="/etc/pki/CA/certs/{{ ca_cert }} is not valid - ca_force_create will be set"
+    - set_fact:
+        ca_force_create: true
+        _ca_missing_cert: true
+
+- name: "Show variable value" 
+  debug: 
+    msg: |
+       " _ca_key_exists: {{ _ca_key_exists }}"
+       "_ca_missing_cert: {{ _ca_missing_cert }}"
+       "ca_force_create: {{ ca_force_create }}"
